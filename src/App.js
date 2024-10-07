@@ -1,25 +1,30 @@
-import logo from './logo.svg';
-import './App.css';
+import "./App.css";
+import { Outlet, useNavigate } from "react-router-dom";
+import "./index.css";
+import UserContext from "./context/UserContext";
+import { useContext, useEffect, useState } from "react";
+import { checkToken } from "./api/storage";
 
-function App() {
+const App = () => {
+  const [user, setUser] = useState(false);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    const tokenAvailable = checkToken();
+    console.log(tokenAvailable);
+    if (tokenAvailable) {
+      setUser(true);
+    } else {
+      navigate("/");
+    }
+  }, [user]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <UserContext.Provider value={[user, setUser]}>
+      <div>
+        <Outlet />
+      </div>
+    </UserContext.Provider>
   );
-}
-
+};
 export default App;
