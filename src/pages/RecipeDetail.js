@@ -1,5 +1,5 @@
 import React from "react";
 
-export const RecipeDetail = () => {
-  return <div>RecipeDetail</div>;
-};
+const RecipeDetails = ({ recipe, onClose }) => {};
+
+export default RecipeDetails;
