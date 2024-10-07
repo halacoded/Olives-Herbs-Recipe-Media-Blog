@@ -59,7 +59,7 @@ export const Recipes = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingRecipe(null);
+    setEditingRecipe(null); // This line ensures editingRecipe is set to null
     refetch();
   };
 

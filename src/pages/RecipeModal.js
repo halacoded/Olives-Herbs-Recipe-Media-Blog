@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createRecipe, updateRecipe } from "../api/recipes";
-import { createIngredient } from "../api/ingredients";
-import { createCategory } from "../api/category";
+import { createIngredient, getAllIngredients } from "../api/ingredients";
+import { createCategory, getAllCategories } from "../api/category";
 
 const RecipeModal = ({ onClose, show, recipe }) => {
   const [formData, setFormData] = useState({
@@ -19,22 +19,58 @@ const RecipeModal = ({ onClose, show, recipe }) => {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const [recipeImage, setRecipeImage] = useState(null);
+  const [allIngredients, setAllIngredients] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedIngredient, setSelectedIngredient] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (recipe) {
+    // Fetch all ingredients and categories when the modal opens
+    const fetchData = async () => {
+      const ingredientsData = await getAllIngredients();
+      const categoriesData = await getAllCategories();
+      setAllIngredients(ingredientsData);
+      setAllCategories(categoriesData);
+    };
+    fetchData();
+
+    // Reset all fields when the modal is opened
+    if (show) {
       setFormData({
-        name: recipe.name || "",
-        description: recipe.description || "",
-        instructions: recipe.instructions.join(", ") || "",
-        timeToCook: recipe.timeToCook || "",
-        calories: recipe.calories || "",
+        name: "",
+        description: "",
+        instructions: "",
+        timeToCook: "",
+        calories: "",
+        recipeImage: "",
       });
-      setIngredients(recipe.ingredients || []);
-      setCategories(recipe.category || []);
+      setIngredients([]);
+      setCategories([]);
+      setRecipeImage(null);
+      setError(null);
+      setNewIngredient("");
+      setNewCategory("");
+      setSelectedIngredient("");
+      setSelectedCategory("");
+
+      // If editing an existing recipe, populate the fields after resetting
+      if (recipe) {
+        setTimeout(() => {
+          setFormData({
+            name: recipe.name || "",
+            description: recipe.description || "",
+            instructions: recipe.instructions.join(", ") || "",
+            timeToCook: recipe.timeToCook || "",
+            calories: recipe.calories || "",
+          });
+          setIngredients(recipe.ingredients || []);
+          setCategories(recipe.category || []);
+        }, 0);
+      }
     }
-  }, [recipe]);
+  }, [recipe, show]); // Added 'show' to the dependency array
 
   const createIngredientMutation = useMutation({
     mutationFn: createIngredient,
@@ -59,7 +95,13 @@ const RecipeModal = ({ onClose, show, recipe }) => {
   });
 
   const { mutate, isLoading } = useMutation({
-    mutationFn: recipe ? updateRecipe : createRecipe,
+    mutationFn: (data) => {
+      if (recipe) {
+        return updateRecipe(recipe._id, data);
+      } else {
+        return createRecipe(data);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       onClose();
@@ -80,14 +122,30 @@ const RecipeModal = ({ onClose, show, recipe }) => {
   };
 
   const handleAddIngredient = () => {
-    if (newIngredient.trim()) {
-      createIngredientMutation.mutate({ name: newIngredient.trim() });
+    if (selectedIngredient) {
+      const existingIngredient = allIngredients.find(
+        (ing) => ing.name === selectedIngredient
+      );
+      if (existingIngredient) {
+        setIngredients([...ingredients, existingIngredient]);
+      } else {
+        createIngredientMutation.mutate({ name: selectedIngredient.trim() });
+      }
+      setSelectedIngredient("");
     }
   };
 
   const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      createCategoryMutation.mutate({ name: newCategory.trim() });
+    if (selectedCategory) {
+      const existingCategory = allCategories.find(
+        (cat) => cat.name === selectedCategory
+      );
+      if (existingCategory) {
+        setCategories([...categories, existingCategory]);
+      } else {
+        createCategoryMutation.mutate({ name: selectedCategory.trim() });
+      }
+      setSelectedCategory("");
     }
   };
 
@@ -95,7 +153,20 @@ const RecipeModal = ({ onClose, show, recipe }) => {
     e.preventDefault();
     setError(null);
 
-    mutate(recipe ? { id: recipe._id, data: formData } : formData);
+    const recipeData = {
+      ...formData,
+      ingredients: ingredients.map((ing) => ing._id),
+      category: categories.map((cat) => cat._id),
+    };
+
+    if (recipe) {
+      // For updating, we need to explicitly set the instructions as an array
+      recipeData.instructions = recipeData.instructions
+        .split(",")
+        .map((instruction) => instruction.trim());
+    }
+
+    mutate(recipeData);
   };
 
   if (!show) return null;
@@ -145,12 +216,24 @@ const RecipeModal = ({ onClose, show, recipe }) => {
               Ingredients
             </label>
             <div className="flex mt-1">
+              <select
+                value={selectedIngredient}
+                onChange={(e) => setSelectedIngredient(e.target.value)}
+                className="flex-grow rounded-l-md border-gray-300 focus:border-olive focus:ring focus:ring-olive focus:ring-opacity-50 text-black"
+              >
+                <option value="">Select or type new ingredient</option>
+                {allIngredients.map((ing) => (
+                  <option key={ing._id} value={ing.name}>
+                    {ing.name}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
-                value={newIngredient}
-                onChange={(e) => setNewIngredient(e.target.value)}
+                value={selectedIngredient}
+                onChange={(e) => setSelectedIngredient(e.target.value)}
                 className="flex-grow rounded-l-md border-gray-300 focus:border-olive focus:ring focus:ring-olive focus:ring-opacity-50 text-black"
-                placeholder="Add ingredient"
+                placeholder="Or type new ingredient"
               />
               <button
                 type="button"
@@ -184,12 +267,24 @@ const RecipeModal = ({ onClose, show, recipe }) => {
               Categories
             </label>
             <div className="flex mt-1">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="flex-grow rounded-l-md border-gray-300 focus:border-olive focus:ring focus:ring-olive focus:ring-opacity-50 text-black"
+              >
+                <option value="">Select or type new category</option>
+                {allCategories.map((cat) => (
+                  <option key={cat._id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
                 className="flex-grow rounded-l-md border-gray-300 focus:border-olive focus:ring focus:ring-olive focus:ring-opacity-50 text-black"
-                placeholder="Add category"
+                placeholder="Or type new category"
               />
               <button
                 type="button"
