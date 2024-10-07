@@ -21,7 +21,16 @@ const App = () => {
 
   return (
     <UserContext.Provider value={[user, setUser]}>
-      <div>
+      <div
+        className="flex flex-col min-h-screen bg-olive text-white
+        font-['Telugu_MN'] p-20"
+      >
+        <header>
+          <div className="text-5xl font-bold mb-2 font-['Dancing_Script']  text-[#8C9084]">
+            {" "}
+            Olives & Herbs
+          </div>
+        </header>
         <Outlet />
       </div>
     </UserContext.Provider>
