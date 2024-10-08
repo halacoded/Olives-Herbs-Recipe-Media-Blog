@@ -1,11 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllRecipes, deleteOneRecipe } from "../api/recipes";
+import { deleteOneRecipe } from "../api/recipes";
+import { getMe } from "../api/users";
+import { getAllCategories } from "../api/category";
+import { getAllIngredients } from "../api/ingredients";
 import RecipeModal from "./RecipeModal";
 
-const NavItem = ({ title, content }) => {
+const NavItem = ({ title, content, to }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (to) {
+      navigate(to);
+    }
+  };
 
   return (
     <li
@@ -13,7 +23,10 @@ const NavItem = ({ title, content }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <button className="px-4 py-2 rounded transition-colors relative">
+      <button
+        className="px-4 py-2 rounded transition-colors relative"
+        onClick={handleClick}
+      >
         {title}
         <span
           className={`absolute bottom-0 left-0 w-full h-0.5 bg-white transform origin-left transition-transform duration-300 ${
@@ -21,7 +34,7 @@ const NavItem = ({ title, content }) => {
           }`}
         ></span>
       </button>
-      {isHovered && (
+      {isHovered && content && (
         <div className="absolute z-10 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
           <div className="py-1">
             <div className="px-4 py-2 text-sm text-gray-700">{content}</div>
@@ -37,21 +50,83 @@ export const Recipes = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [ingredientsFilter, setIngredientsFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [filteredRecipes, setFilteredRecipes] = useState([]);
 
   const {
-    data: recipes,
-    isLoading,
-    error,
-    refetch,
+    data: user,
+    isLoading: userLoading,
+    error: userError,
+    refetch: refetchUser,
   } = useQuery({
-    queryKey: ["recipes"],
-    queryFn: getAllRecipes,
+    queryKey: ["currentUser"],
+    queryFn: getMe,
   });
+
+  const { data: ingredients, isLoading: ingredientsLoading } = useQuery({
+    queryKey: ["ingredients"],
+    queryFn: getAllIngredients,
+  });
+
+  const { data: category, isLoading: categoryLoading } = useQuery({
+    queryKey: ["category"],
+    queryFn: getAllCategories,
+  });
+
+  useEffect(() => {
+    if (user && user.recipes && ingredients && category) {
+      console.log("Filtering recipes:");
+      console.log("Ingredients Filter:", ingredientsFilter);
+      console.log("Category Filter:", categoryFilter);
+
+      const filtered = user.recipes.filter((recipe) => {
+        const searchLower = searchTerm.toLowerCase();
+
+        const matchesSearch =
+          recipe.name.toLowerCase().includes(searchLower) ||
+          recipe.timeToCook.toString().includes(searchLower) ||
+          recipe.calories.toString().includes(searchLower);
+
+        const matchesIngredient =
+          ingredientsFilter === "" ||
+          (Array.isArray(recipe.ingredients) &&
+            recipe.ingredients.length > 0 &&
+            recipe.ingredients.some((ing) => ing === ingredientsFilter));
+
+        const matchesCategory =
+          categoryFilter === "" ||
+          (Array.isArray(recipe.category) &&
+            recipe.category.length > 0 &&
+            recipe.category.some((cat) => cat === categoryFilter));
+
+        console.log(`Recipe: ${recipe.name}`);
+        console.log(`Matches Search: ${matchesSearch}`);
+        console.log(
+          `Matches Ingredient: ${matchesIngredient},${ingredientsFilter}`
+        );
+        console.log(`Matches Category: ${matchesCategory}`);
+
+        return matchesSearch && matchesIngredient && matchesCategory;
+      });
+
+      console.log("Filtered Recipes:", filtered);
+      setFilteredRecipes(filtered);
+    }
+  }, [
+    searchTerm,
+    ingredientsFilter,
+    categoryFilter,
+    user,
+    ingredients,
+    category,
+  ]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteOneRecipe,
     onSuccess: () => {
-      queryClient.invalidateQueries(["recipes"]);
+      queryClient.invalidateQueries(["currentUser"]);
     },
     onError: (error) => {
       console.error("Error deleting recipe:", error);
@@ -60,7 +135,7 @@ export const Recipes = () => {
       );
     },
     onSettled: () => {
-      refetch();
+      refetchUser();
     },
   });
 
@@ -87,7 +162,7 @@ export const Recipes = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingRecipe(null);
-    refetch();
+    refetchUser();
   };
 
   return (
@@ -156,6 +231,45 @@ export const Recipes = () => {
         </ul>
       </nav>
 
+      {/* Search and filter inputs */}
+      <div className="mb-8 space-y-4">
+        <input
+          type="text"
+          placeholder="Search recipes by name, cook time, or calories"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 rounded-md text-olive"
+        />
+        <div className="flex space-x-4">
+          <select
+            value={ingredientsFilter}
+            onChange={(e) => setIngredientsFilter(e.target.value)}
+            className="flex-1 p-2 rounded-md text-olive"
+          >
+            <option value="">All Ingredients</option>
+            {ingredients &&
+              ingredients.map((ing) => (
+                <option key={ing._id} value={ing._id}>
+                  {ing.name}
+                </option>
+              ))}
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="flex-1 p-2 rounded-md text-olive"
+          >
+            <option value="">All Categories</option>
+            {category &&
+              category.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </option>
+              ))}
+          </select>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mt-12">
         <button
           className="rounded-lg p-6 shadow-md w-full h-64 flex items-center justify-center transition-all hover:bg-opacity-90 bg-white"
@@ -176,8 +290,8 @@ export const Recipes = () => {
             />
           </svg>
         </button>
-        {recipes &&
-          recipes.map((recipe) => (
+        {filteredRecipes.length > 0 ? (
+          filteredRecipes.map((recipe) => (
             <div
               key={recipe._id}
               className="bg-white rounded-lg p-6 shadow-md w-full h-64 relative"
@@ -230,10 +344,18 @@ export const Recipes = () => {
                 </button>
               </div>
             </div>
-          ))}
+          ))
+        ) : (
+          <div className="col-span-full text-center text-xl">
+            No recipes match the current filters. Try adjusting your search or
+            filters.
+          </div>
+        )}
       </div>
-      {isLoading && <p>Loading recipes...</p>}
-      {error && <p className="text-red-500">{error.message}</p>}
+      {(userLoading || ingredientsLoading || categoryLoading) && (
+        <p>Loading...</p>
+      )}
+      {userError && <p className="text-red-500">{userError.message}</p>}
 
       <RecipeModal
         show={showModal}
@@ -241,5 +363,22 @@ export const Recipes = () => {
         recipe={editingRecipe}
       />
     </div>
+  );
+};
+
+export const Navigation = () => {
+  return (
+    <nav className="bg-olive p-4">
+      <ul className="flex space-x-4">
+        <NavItem title="Home" to="/" />
+        <NavItem title="Recipes" to="/recipes" />
+        <NavItem
+          title="Favorites"
+          to="/favorites"
+          content="View your favorite recipes"
+        />
+        {/* Add other navigation items as needed */}
+      </ul>
+    </nav>
   );
 };

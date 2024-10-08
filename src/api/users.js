@@ -63,6 +63,8 @@ const getAllUsers = async (username) => {
 
 const updateUser = async (userData) => {
   try {
+    const formData = new FormData();
+    for (const key in userData) formData.append(key, userData[key]);
     const { data } = await instance.put("/users/update", userData, {
       headers: {
         "Content-Type": "multipart/form-data",

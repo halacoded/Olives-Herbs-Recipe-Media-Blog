@@ -145,6 +145,31 @@ const getDislikesForRecipe = async (id) => {
   }
 };
 
+const searchRecipes = async (searchParams) => {
+  try {
+    const { query, cookTime, calories, ingredient, category } = searchParams;
+    let url = "/recipes/search?";
+
+    if (query) url += `query=${encodeURIComponent(query)}&`;
+    if (cookTime) url += `cookTime=${encodeURIComponent(cookTime)}&`;
+    if (calories) url += `calories=${encodeURIComponent(calories)}&`;
+    if (ingredient) url += `ingredient=${encodeURIComponent(ingredient)}&`;
+    if (category) url += `category=${encodeURIComponent(category)}&`;
+
+    // Remove the trailing '&' if it exists
+    url = url.replace(/&$/, "");
+
+    const { data } = await instance.get(url);
+    return data;
+  } catch (error) {
+    console.error(
+      "Error searching recipes:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
 export {
   getAllRecipes,
   getOneRecipe,
@@ -155,4 +180,5 @@ export {
   toggleDislikeRecipe,
   getLikesForRecipe,
   getDislikesForRecipe,
+  searchRecipes, // Add this new export
 };

@@ -16,7 +16,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
   const [newIngredient, setNewIngredient] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [ingredients, setIngredients] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState([]);
   const [error, setError] = useState(null);
   const [recipeImage, setRecipeImage] = useState(null);
   const [allIngredients, setAllIngredients] = useState([]);
@@ -47,7 +47,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
         recipeImage: "",
       });
       setIngredients([]);
-      setCategories([]);
+      setCategory([]);
       setRecipeImage(null);
       setError(null);
       setNewIngredient("");
@@ -66,7 +66,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
             calories: recipe.calories || "",
           });
           setIngredients(recipe.ingredients || []);
-          setCategories(recipe.category || []);
+          setCategory(recipe.category || []);
         }, 0);
       }
     }
@@ -86,7 +86,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
   const createCategoryMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: (data) => {
-      setCategories([...categories, { _id: data._id, name: data.name }]);
+      setCategory([...category, { _id: data._id, name: data.name }]);
       setNewCategory("");
     },
     onError: (error) => {
@@ -141,7 +141,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
         (cat) => cat.name === selectedCategory
       );
       if (existingCategory) {
-        setCategories([...categories, existingCategory]);
+        setCategory([...category, existingCategory]);
       } else {
         createCategoryMutation.mutate({ name: selectedCategory.trim() });
       }
@@ -156,14 +156,14 @@ const RecipeModal = ({ onClose, show, recipe }) => {
     const recipeData = {
       ...formData,
       ingredients: ingredients.map((ing) => ing._id),
-      category: categories.map((cat) => cat._id),
+      category: category.map((cat) => cat._id),
+      instructions: formData.instructions
+        .split(",")
+        .map((instruction) => instruction.trim()),
     };
 
-    if (recipe) {
-      // For updating, we need to explicitly set the instructions as an array
-      recipeData.instructions = recipeData.instructions
-        .split(",")
-        .map((instruction) => instruction.trim());
+    if (recipeImage) {
+      recipeData.recipeImage = recipeImage;
     }
 
     mutate(recipeData);
@@ -295,15 +295,13 @@ const RecipeModal = ({ onClose, show, recipe }) => {
               </button>
             </div>
             <ul className="mt-2">
-              {categories.map((category) => (
-                <li key={category._id} className="flex items-center">
-                  <span className="text-gray-700">{category.name}</span>
+              {category.map((cat) => (
+                <li key={cat._id} className="flex items-center">
+                  <span className="text-gray-700">{cat.name}</span>
                   <button
                     type="button"
                     onClick={() => {
-                      setCategories(
-                        categories.filter((cat) => cat._id !== category._id)
-                      );
+                      setCategory(category.filter((c) => c._id !== cat._id));
                     }}
                     className="ml-2 text-red-500 hover:text-red-600"
                   >

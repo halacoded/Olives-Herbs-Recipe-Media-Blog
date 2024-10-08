@@ -10,10 +10,12 @@ import { SignUp } from "./pages/SignUp";
 import { Account } from "./pages/Account";
 import { Recipes } from "./pages/Recipes";
 import { Profile } from "./pages/Profile";
-import RecipeDetail from "./pages/RecipeDetail";
+import { RecipeDetail } from "./pages/RecipeDetail";
+import { Fav } from "./pages/Fav";
 import "./index.css";
 import App from "./App";
 const queryClient = new QueryClient();
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -27,6 +29,7 @@ const router = createBrowserRouter([
       { path: "/profile", element: <Profile /> },
       { path: "/signin", element: <SignIn /> },
       { path: "/signup", element: <SignUp /> },
+      { path: "/fav", element: <Fav /> },
     ],
   },
 ]);
