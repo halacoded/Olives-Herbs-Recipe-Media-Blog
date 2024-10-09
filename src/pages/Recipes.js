@@ -300,6 +300,7 @@ export const Recipes = () => {
               <h3 className="text-olive text-xl font-bold mb-2">
                 {recipe.name}
               </h3>
+              {console.log("image", recipe)}
               <img
                 src={"http://localhost:10000/" + recipe.recipeImage}
                 alt={recipe.name}

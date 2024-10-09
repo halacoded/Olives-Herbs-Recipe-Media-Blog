@@ -85,15 +85,22 @@ export const Home = () => {
         {filteredRecipes.map((recipe) => (
           <div
             key={recipe._id}
-            className="border rounded-lg p-4 shadow-md cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-olive-dark hover:shadow-lg"
-            onClick={() => handleRecipeClick(recipe._id)}
+            className="border rounded-lg p-4 shadow-md cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-olive-dark hover:shadow-lg relative"
           >
-            <h2 className="text-xl font-semibold mb-2 transition-colors duration-300 ease-in-out hover:text-yellow-300">
-              {recipe.name}
-            </h2>
-            {recipe.user && (
-              <p className="text-sm mb-2">Created by: {recipe.user.username}</p>
-            )}
+            <div
+              onClick={() => handleRecipeClick(recipe._id)}
+              className="h-full"
+            >
+              <h2 className="text-xl font-semibold mb-2 transition-colors duration-300 ease-in-out hover:text-yellow-300">
+                {recipe.name}
+              </h2>
+              {recipe.user && (
+                <p className="text-sm mb-2">
+                  Created by: {recipe.user.username}
+                </p>
+              )}
+              <div className="pb-8"></div>
+            </div>
           </div>
         ))}
       </div>

@@ -151,9 +151,11 @@ const RecipeModal = ({ onClose, show, recipe }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting recipe with ID:", recipe._id); // Add this line
+    // console.log("Submitting recipe with ID:", recipe._id); // Add this line
     setError(null);
 
+    console.log(ingredients);
+    console.log(category);
     const recipeData = {
       ...formData,
       ingredients: ingredients.map((ing) => ing._id),
@@ -167,6 +169,7 @@ const RecipeModal = ({ onClose, show, recipe }) => {
       recipeData.recipeImage = recipeImage;
     }
 
+    console.log(recipeData);
     mutate(recipeData);
   };
 

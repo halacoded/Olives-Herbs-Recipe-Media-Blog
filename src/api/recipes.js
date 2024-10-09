@@ -56,6 +56,7 @@ const createRecipe = async (recipeData) => {
 
 const updateRecipe = async (id, recipeData) => {
   try {
+    console.log(id);
     console.log("Updating recipe with ID:", id);
     const formData = new FormData();
     for (const key in recipeData) formData.append(key, recipeData[key]);
