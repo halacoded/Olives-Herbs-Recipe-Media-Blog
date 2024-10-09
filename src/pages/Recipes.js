@@ -124,6 +124,7 @@ export const Recipes = () => {
   ]);
 
   const deleteMutation = useMutation({
+    queryKey: ["deleteOneRecipe"],
     mutationFn: deleteOneRecipe,
     onSuccess: () => {
       queryClient.invalidateQueries(["currentUser"]);

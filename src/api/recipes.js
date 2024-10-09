@@ -56,16 +56,9 @@ const createRecipe = async (recipeData) => {
 
 const updateRecipe = async (id, recipeData) => {
   try {
+    console.log("Updating recipe with ID:", id);
     const formData = new FormData();
-    for (const key in recipeData) {
-      if (key === "recipeImage" && recipeData[key] instanceof File) {
-        formData.append(key, recipeData[key], recipeData[key].name);
-      } else if (Array.isArray(recipeData[key])) {
-        recipeData[key].forEach((item) => formData.append(key, item));
-      } else {
-        formData.append(key, recipeData[key]);
-      }
-    }
+    for (const key in recipeData) formData.append(key, recipeData[key]);
 
     const { data } = await instance.put(`/recipes/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },

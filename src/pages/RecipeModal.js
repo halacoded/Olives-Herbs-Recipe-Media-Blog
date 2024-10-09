@@ -149,8 +149,9 @@ const RecipeModal = ({ onClose, show, recipe }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submitting recipe with ID:", recipe._id); // Add this line
     setError(null);
 
     const recipeData = {
